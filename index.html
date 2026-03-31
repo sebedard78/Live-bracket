@@ -3,170 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bracket Viewer - Split Screen Optimized</title>
+    <title>LP Bracket - Compact TV View</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@700;900&display=swap');
         
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: #000000; 
+        body, html { 
+            margin: 0; padding: 0; 
+            height: 100vh; width: 100vw;
+            background-color: #000; 
             color: white; 
-            margin: 0; 
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden; /* Strictly no scrolling */
         }
 
-        /* HEADER AREA */
-        header {
-            height: 60px;
-            background: #111;
-            border-bottom: 2px solid #0ea5e9;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 20px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        /* THE FIX: Vertical Stacking for Split Screens */
-        .bracket-container {
-            display: flex;
-            flex-direction: column; /* Stack Winners on top of Losers */
-            gap: 50px;
-            padding: 30px;
-            width: 100%;
-        }
-
-        .bracket-section {
+        /* Full Screen Layout Wrapper */
+        .dashboard {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            height: 100vh;
+            padding: 10px;
+            gap: 10px;
         }
 
-        .section-label {
-            font-size: 24px;
+        /* Section Containers (Winners, Finals, Losers) */
+        .bracket-zone {
+            flex: 1; /* Distributes height evenly */
+            display: flex;
+            flex-direction: column;
+            background: #0a0a0a;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 5px;
+            min-height: 0; /* Prevents overflow */
+        }
+
+        .zone-label {
+            font-size: 10px;
             font-weight: 900;
             text-transform: uppercase;
             color: #0ea5e9;
-            border-left: 8px solid #0ea5e9;
-            padding-left: 15px;
-            margin-bottom: 10px;
-            background: rgba(14, 165, 233, 0.1);
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+            text-align: center;
+            opacity: 0.8;
         }
 
-        /* Horizontal rounds within the stack */
-        .rounds-row {
+        /* Rounds Container */
+        .rounds-grid {
             display: flex;
-            gap: 30px;
-            overflow-x: auto;
-            padding-bottom: 20px;
-            align-items: flex-start;
+            flex: 1;
+            gap: 8px;
+            min-height: 0;
         }
 
-        .round-column {
+        .round-col {
+            flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 20px;
-            min-width: 280px; /* Wider cards for readability */
+            gap: 4px;
+            min-width: 0;
         }
 
-        .round-name {
-            font-size: 14px;
-            font-weight: 900;
-            color: #64748b;
-            text-transform: uppercase;
+        .round-header {
+            font-size: 8px;
             text-align: center;
-            padding: 5px;
-            border-bottom: 2px solid #334155;
-            margin-bottom: 10px;
+            color: #475569;
+            text-transform: uppercase;
+            font-weight: 900;
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 2px;
         }
 
-        /* MATCH CARDS - High Contrast for distance viewing */
+        /* THE COMPACT CARD: Side-by-side names to save height */
         .match-card {
-            background: #111827;
-            border: 3px solid #334155;
-            border-radius: 12px;
+            background: #111;
+            border: 1.5px solid #334155;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
             overflow: hidden;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
         }
 
-        .team-row {
+        .match-card.active { border-color: #0ea5e9; box-shadow: 0 0 10px rgba(14, 165, 233, 0.3); }
+
+        .team-strip {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px 20px;
-            font-size: 18px; /* Big font for the TV */
-            font-weight: 800;
-            border-bottom: 2px solid #000;
+            padding: 4px 6px;
+            font-size: 11px; /* Scaled for TV */
+            font-weight: 900;
+            border-bottom: 1px solid #000;
+            white-space: nowrap;
         }
 
-        .team-row.winner {
-            background: #0ea5e9;
-            color: #000;
+        .team-strip.win { background: #0ea5e9; color: #000; }
+        
+        .name-txt {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-transform: uppercase;
         }
 
-        .score-box {
-            background: #000;
-            color: #fff;
-            padding: 5px 12px;
-            border-radius: 6px;
+        .score-val {
+            background: rgba(0,0,0,0.5);
+            padding: 0px 6px;
+            border-radius: 3px;
             font-family: monospace;
-            font-size: 20px;
-            min-width: 45px;
-            text-align: center;
+            font-size: 12px;
+            margin-left: 5px;
         }
 
-        .team-row.winner .score-box {
-            background: #fff;
-            color: #000;
+        .win .score-val { background: #fff; color: #000; }
+
+        /* Finals Zone - Special Styling */
+        .finals-zone {
+            flex: 0.4; /* Smaller height for the single championship match */
+            background: linear-gradient(to right, #000, #082f49, #000);
+            border: 2px solid #0ea5e9;
         }
 
-        /* Scrollbar for Rounds */
-        .rounds-row::-webkit-scrollbar { height: 10px; }
-        .rounds-row::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-
-        .pulse-dot {
-            width: 10px; height: 10px; background: #22c55e; border-radius: 50%;
-            animation: pulse 2s infinite;
+        .finals-match {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
         }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .finals-card { width: 80%; transform: scale(1.1); }
+
     </style>
 </head>
 <body>
 
-    <header>
-        <div class="flex items-center gap-3">
-            <h1 class="text-xl font-black italic uppercase tracking-tighter">LP Bracket</h1>
-            <span class="bg-zinc-800 text-zinc-400 text-[10px] px-2 py-1 font-bold rounded">LIVE FEED</span>
-        </div>
-        <div class="flex items-center gap-2">
-            <div class="pulse-dot"></div>
-            <span class="text-[11px] font-black uppercase text-zinc-500">Cloud Sync Active</span>
-        </div>
-    </header>
-
-    <main class="bracket-container" id="zoomLayer">
+    <div class="dashboard">
         
-        <!-- WINNERS SECTION -->
-        <div class="bracket-section">
-            <h2 class="section-label">Winners Bracket</h2>
-            <div class="rounds-row" id="winnersRow">
-                <!-- Javascript will inject here -->
-            </div>
+        <!-- TOP: WINNERS -->
+        <div class="bracket-zone">
+            <div class="zone-label">Winners Bracket</div>
+            <div class="rounds-grid" id="winnersContent"></div>
         </div>
 
-        <!-- LOSERS SECTION -->
-        <div class="bracket-section">
-            <h2 class="section-label">Losers Bracket</h2>
-            <div class="rounds-row" id="losersRow">
-                <!-- Javascript will inject here -->
-            </div>
+        <!-- MIDDLE: CHAMPIONSHIP -->
+        <div class="bracket-zone finals-zone">
+            <div class="zone-label text-white">Championship Final</div>
+            <div class="finals-match" id="finalsContent"></div>
         </div>
 
-    </main>
+        <!-- BOTTOM: LOSERS -->
+        <div class="bracket-zone">
+            <div class="zone-label text-orange-500">Losers Bracket</div>
+            <div class="rounds-grid" id="losersContent"></div>
+        </div>
+
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -191,49 +183,48 @@
 
         function render(data) {
             const b = data.bracket;
-            const rosterSize = data.roster ? data.roster.length : 0;
-            const size = Math.pow(2, Math.ceil(Math.log2(rosterSize || 2)));
+            const size = Math.pow(2, Math.ceil(Math.log2(data.roster?.length || 2)));
             const wRounds = Math.log2(size);
 
-            const winnersContainer = document.getElementById('winnersRow');
-            const losersContainer = document.getElementById('losersRow');
-
-            // Build Winners
+            // 1. Render Winners
             let wHtml = "";
             for (let r = 1; r <= wRounds; r++) {
-                wHtml += `<div class="round-column"><div class="round-name">Round ${r}</div>`;
+                wHtml += `<div class="round-col"><div class="round-header">R${r}</div>`;
                 wHtml += b.winners.filter(x => x.id.startsWith(`W${r}-`)).map(m => createCard(m)).join('');
                 wHtml += `</div>`;
             }
-            // Add Finals to winners row
-            wHtml += `<div class="round-column"><div class="round-name text-sky-400">Championship</div>`;
-            wHtml += b.winners.filter(x => x.id.startsWith('GF')).map(m => createCard(m)).join('');
-            wHtml += `</div>`;
-            winnersContainer.innerHTML = wHtml;
+            document.getElementById('winnersContent').innerHTML = wHtml;
 
-            // Build Losers
+            // 2. Render Finals
+            const gf = b.winners.find(x => x.id.startsWith('GF'));
+            document.getElementById('finalsContent').innerHTML = `<div class="finals-card">${createCard(gf)}</div>`;
+
+            // 3. Render Losers
             let lHtml = "";
             const maxLR = (wRounds - 1) * 2;
             for (let r = 1; r <= maxLR; r++) {
-                lHtml += `<div class="round-column"><div class="round-name">Losers R${r}</div>`;
+                lHtml += `<div class="round-col"><div class="round-header">L${r}</div>`;
                 lHtml += b.losers.filter(x => x.id.startsWith(`L${r}-`)).map(m => createCard(m)).join('');
                 lHtml += `</div>`;
             }
-            losersContainer.innerHTML = lHtml;
+            document.getElementById('losersContent').innerHTML = lHtml;
         }
 
         function createCard(m) {
-            const t1Name = m.t1?.name || 'TBD';
-            const t2Name = m.t2?.name || 'TBD';
+            if (!m) return "";
+            const t1 = m.t1?.name || 'TBD';
+            const t2 = m.t2?.name || 'TBD';
+            const isBye = m.s1 === 'BYE' || m.s2 === 'BYE';
+            
             return `
-                <div class="match-card">
-                    <div class="team-row ${m.win === t1Name && t1Name !== 'TBD' ? 'winner' : ''}">
-                        <span class="truncate">${t1Name}</span>
-                        <span class="score-box">${m.s1 || 0}</span>
+                <div class="match-card ${!m.win && t1 !== 'TBD' && t2 !== 'TBD' ? 'active' : ''}">
+                    <div class="team-strip ${m.win === t1 && !isBye ? 'win' : ''}">
+                        <span class="name-txt">${t1}</span>
+                        <span class="score-val">${m.s1 || 0}</span>
                     </div>
-                    <div class="team-row ${m.win === t2Name && t2Name !== 'TBD' ? 'winner' : ''}">
-                        <span class="truncate">${t2Name}</span>
-                        <span class="score-box">${m.s2 || 0}</span>
+                    <div class="team-strip ${m.win === t2 && !isBye ? 'win' : ''}">
+                        <span class="name-txt">${t2}</span>
+                        <span class="score-val">${m.s2 || 0}</span>
                     </div>
                 </div>
             `;
