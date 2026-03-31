@@ -3,103 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LP Bracket - Compact TV View</title>
+    <title>LP Bracket - TV Clear View</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@700;900&display=swap');
+        /* Loading a Condensed font which is much easier to read on TVs */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700;900&display=swap');
         
         body, html { 
             margin: 0; padding: 0; 
             height: 100vh; width: 100vw;
             background-color: #000; 
             color: white; 
-            font-family: 'Inter', sans-serif;
-            overflow: hidden; /* Strictly no scrolling */
+            font-family: 'Roboto Condensed', sans-serif;
+            overflow: hidden;
         }
 
-        /* Full Screen Layout Wrapper */
         .dashboard {
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-rows: 1fr 100px 1.2fr; /* Allocates space strictly */
             height: 100vh;
-            padding: 10px;
-            gap: 10px;
+            padding: 5px;
+            gap: 5px;
         }
 
-        /* Section Containers (Winners, Finals, Losers) */
         .bracket-zone {
-            flex: 1; /* Distributes height evenly */
             display: flex;
             flex-direction: column;
             background: #0a0a0a;
             border: 1px solid #1e293b;
-            border-radius: 8px;
-            padding: 5px;
-            min-height: 0; /* Prevents overflow */
+            padding: 4px;
+            overflow: hidden;
         }
 
         .zone-label {
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 900;
             text-transform: uppercase;
-            color: #0ea5e9;
-            letter-spacing: 2px;
-            margin-bottom: 4px;
+            color: #38bdf8;
             text-align: center;
-            opacity: 0.8;
+            padding: 2px;
+            background: #111;
+            border-bottom: 1px solid #1e293b;
         }
 
-        /* Rounds Container */
         .rounds-grid {
             display: flex;
             flex: 1;
-            gap: 8px;
-            min-height: 0;
+            gap: 4px;
+            align-items: stretch;
         }
 
         .round-col {
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 4px;
-            min-width: 0;
+            justify-content: space-around; /* Spreads matches out to stop cramping */
+            gap: 2px;
         }
 
-        .round-header {
-            font-size: 8px;
-            text-align: center;
-            color: #475569;
-            text-transform: uppercase;
-            font-weight: 900;
-            border-bottom: 1px solid #1e293b;
-            padding-bottom: 2px;
-        }
-
-        /* THE COMPACT CARD: Side-by-side names to save height */
+        /* THE CARD: Cleaned up for maximum sharpness */
         .match-card {
-            background: #111;
-            border: 1.5px solid #334155;
-            border-radius: 4px;
+            background: #161b22;
+            border-left: 4px solid #30363d;
             display: flex;
             flex-direction: column;
-            min-height: 0;
-            overflow: hidden;
+            margin-bottom: 2px;
         }
 
-        .match-card.active { border-color: #0ea5e9; box-shadow: 0 0 10px rgba(14, 165, 233, 0.3); }
+        .match-card.active { border-left-color: #0ea5e9; }
 
         .team-strip {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 4px 6px;
-            font-size: 11px; /* Scaled for TV */
-            font-weight: 900;
+            padding: 4px 8px;
+            font-size: 15px; /* Large and clear */
+            font-weight: 700;
             border-bottom: 1px solid #000;
             white-space: nowrap;
         }
 
-        .team-strip.win { background: #0ea5e9; color: #000; }
+        /* Zebra striping for clarity */
+        .team-strip:nth-child(even) { background: rgba(255,255,255,0.03); }
+
+        .team-strip.win { background: #0ea5e9 !important; color: #000; font-weight: 900; }
         
         .name-txt {
             overflow: hidden;
@@ -108,31 +95,24 @@
         }
 
         .score-val {
-            background: rgba(0,0,0,0.5);
-            padding: 0px 6px;
-            border-radius: 3px;
             font-family: monospace;
-            font-size: 12px;
-            margin-left: 5px;
+            font-size: 16px;
+            font-weight: 900;
+            margin-left: 10px;
         }
 
-        .win .score-val { background: #fff; color: #000; }
-
-        /* Finals Zone - Special Styling */
+        /* Finals Styling */
         .finals-zone {
-            flex: 0.4; /* Smaller height for the single championship match */
-            background: linear-gradient(to right, #000, #082f49, #000);
+            background: #000;
             border: 2px solid #0ea5e9;
-        }
-
-        .finals-match {
             display: flex;
-            justify-content: center;
+            flex-direction: row;
             align-items: center;
-            height: 100%;
+            justify-content: center;
+            gap: 20px;
         }
 
-        .finals-card { width: 80%; transform: scale(1.1); }
+        .finals-card { width: 300px; transform: scale(1.1); }
 
     </style>
 </head>
@@ -140,21 +120,20 @@
 
     <div class="dashboard">
         
-        <!-- TOP: WINNERS -->
+        <!-- WINNERS -->
         <div class="bracket-zone">
             <div class="zone-label">Winners Bracket</div>
             <div class="rounds-grid" id="winnersContent"></div>
         </div>
 
-        <!-- MIDDLE: CHAMPIONSHIP -->
-        <div class="bracket-zone finals-zone">
-            <div class="zone-label text-white">Championship Final</div>
-            <div class="finals-match" id="finalsContent"></div>
+        <!-- CHAMPIONSHIP -->
+        <div class="finals-zone" id="finalsContent">
+            <!-- Finals will be injected here -->
         </div>
 
-        <!-- BOTTOM: LOSERS -->
+        <!-- LOSERS -->
         <div class="bracket-zone">
-            <div class="zone-label text-orange-500">Losers Bracket</div>
+            <div class="zone-label" style="color: #fb923c;">Losers Bracket</div>
             <div class="rounds-grid" id="losersContent"></div>
         </div>
 
@@ -186,24 +165,27 @@
             const size = Math.pow(2, Math.ceil(Math.log2(data.roster?.length || 2)));
             const wRounds = Math.log2(size);
 
-            // 1. Render Winners
+            // Render Winners - spread out using justify-around
             let wHtml = "";
             for (let r = 1; r <= wRounds; r++) {
-                wHtml += `<div class="round-col"><div class="round-header">R${r}</div>`;
+                wHtml += `<div class="round-col">`;
                 wHtml += b.winners.filter(x => x.id.startsWith(`W${r}-`)).map(m => createCard(m)).join('');
                 wHtml += `</div>`;
             }
             document.getElementById('winnersContent').innerHTML = wHtml;
 
-            // 2. Render Finals
+            // Render Finals - Big Center Match
             const gf = b.winners.find(x => x.id.startsWith('GF'));
-            document.getElementById('finalsContent').innerHTML = `<div class="finals-card">${createCard(gf)}</div>`;
+            document.getElementById('finalsContent').innerHTML = `
+                <div class="text-sky-500 font-black italic uppercase text-xl">CHAMPIONSHIP</div>
+                <div class="finals-card">${createCard(gf)}</div>
+            `;
 
-            // 3. Render Losers
+            // Render Losers
             let lHtml = "";
             const maxLR = (wRounds - 1) * 2;
             for (let r = 1; r <= maxLR; r++) {
-                lHtml += `<div class="round-col"><div class="round-header">L${r}</div>`;
+                lHtml += `<div class="round-col">`;
                 lHtml += b.losers.filter(x => x.id.startsWith(`L${r}-`)).map(m => createCard(m)).join('');
                 lHtml += `</div>`;
             }
