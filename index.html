@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LP Live Bracket Viewer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #020617; color: white; margin: 0; overflow: hidden; }
+        
+        /* BRACKET LAYOUT STYLES */
+        .bracket-outer { width: 100vw; height: calc(100vh - 80px); overflow: auto; background: #020617; position: relative; }
+        .bracket-scale-layer { transform-origin: 0 0; transition: transform 0.2s ease-out; display: inline-flex; }
+        .bracket-scroll { display: flex; gap: 30px; padding: 40px; align-items: flex-start; }
+
+        .round-col { display: flex; flex-direction: column; gap: 25px; min-width: 200px; }
+        .round-title { font-size: 10px; font-weight: 900; color: #64748b; text-transform: uppercase; text-align: center; border-bottom: 1px solid #1e293b; margin-bottom: 12px; padding-bottom: 4px; }
+        
+        .match-card { background: #111827; border: 1.5px solid #1e293b; border-radius: 12px; overflow: hidden; width: 200px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        .team-line { display: flex; justify-content: space-between; padding: 12px; font-size: 11px; font-weight: 800; border-bottom: 1px solid #020617; color: white; }
+        .team-line.win { background: #083344; color: #22d3ee; }
+        .score-box { background: #000; color: #fff; padding: 4px 8px; border-radius: 6px; min-width: 30px; text-align: center; }
+        
+        /* Hide scrollbars but allow scrolling */
+        .bracket-outer::-webkit-scrollbar { width: 8px; height: 8px; }
+        .bracket-outer::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+
+        .pulse-live { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+    </style>
+</head>
+<body>
+
+    <!-- Header / Controls -->
+    <header class="h-20 bg-black border-b border-zinc-800 px-6 flex justify-between items-center relative z-50">
+        <div>
+            <h1 class="text-xl font-black italic uppercase text-sky-400 leading-none">Tournament Bracket</h1>
+            <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Live View Mode</p>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <div class="flex bg-zinc-900 rounded-lg p-1 border border-zinc-800">
+                <button onclick="zoom(0.1)" class="px-4 py-2 hover:bg-zinc-800 font-black text-white text-sm">+</button>
+                <button onclick="zoom(-0.1)" class="px-4 py-2 hover:bg-zinc-800 font-black text-white text-sm">-</button>
+                <button onclick="zoom('reset')" class="px-3 py-1 text-[10px] uppercase font-black text-zinc-500 border-l border-zinc-800">Reset</button>
+            </div>
+            <div class="text-right hidden md:block">
+                <p id="matchCount" class="text-[10px] font-black text-sky-500 uppercase">Updating...</p>
+                <div class="flex items-center gap-2 justify-end">
+                    <span class="w-2 h-2 bg-green-500 rounded-full pulse-live"></span>
+                    <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-tighter">Cloud Connected</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="bracket-outer" id="bracketOuter">
+        <div class="bracket-scale-layer" id="scaleLayer">
+            <div class="bracket-scroll" id="bracketContent">
+                <!-- Bracket generated here -->
+                <div class="py-20 px-10 text-zinc-600 italic">Connecting to tournament data...</div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC1cxDYgc31rIB3MZnlxEt8rHNIFtnPDIA",
+            authDomain: "lphc-stats.firebaseapp.com",
+            projectId: "lphc-stats",
+            storageBucket: "lphc-stats.firebasestorage.app",
+            messagingSenderId: "689983014450",
+            appId: "1:689983014450:web:3490f5167e00574a985e2b",
+            measurementId: "G-P9GD4936KW"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let bScale = 1.0;
+        let tData = null;
+
+        // Zoom Logic
+        window.zoom = (delta) => {
+            if (delta === 'reset') bScale = 1.0;
+            else bScale = Math.max(0.1, Math.min(2.0, bScale + delta));
+            document.getElementById('scaleLayer').style.transform = `scale(${bScale})`;
+        };
+
+        // Real-time Listener
+        onSnapshot(doc(db, "tournament_final_v1", "data"), (snap) => {
+            if (snap.exists()) {
+                tData = snap.data();
+                renderBracket();
+            }
+        });
+
+        function renderBracket() {
+            if (!tData || !tData.bracket) return;
+            const b = tData.bracket;
+            const container = document.getElementById('bracketContent');
+            const rosterSize = tData.roster ? tData.roster.length : 0;
+            const size = Math.pow(2, Math.ceil(Math.log2(rosterSize || 2)));
+            const wRounds = Math.log2(size);
+
+            let html = "";
+
+            // Winners Rounds
+            for (let r = 1; r <= wRounds; r++) {
+                html += `<div class="round-col"><div class="round-title">Winners R${r}</div>`;
+                html += b.winners.filter(x => x.id.startsWith(`W${r}-`)).map(m => renderCard(m)).join('');
+                html += `</div>`;
+            }
+
+            // Grand Finals
+            html += `<div class="round-col"><div class="round-title">Championship</div>`;
+            html += b.winners.filter(x => x.id.startsWith('GF')).map(m => renderCard(m)).join('');
+            html += `</div>`;
+
+            // Losers Rounds
+            const maxLR = (wRounds - 1) * 2;
+            for (let r = 1; r <= maxLR; r++) {
+                html += `<div class="round-col"><div class="round-title">Losers R${r}</div>`;
+                html += b.losers.filter(x => x.id.startsWith(`L${r}-`)).map(m => renderCard(m)).join('');
+                html += `</div>`;
+            }
+
+            container.innerHTML = html;
+            document.getElementById('matchCount').innerText = `${rosterSize} Teams Seaded`;
+        }
+
+        function renderCard(m) {
+            const t1Name = m.t1?.name || 'TBD';
+            const t2Name = m.t2?.name || 'TBD';
+            const s1 = m.s1 || 0;
+            const s2 = m.s2 || 0;
+            
+            return `
+                <div class="match-card">
+                    <div class="team-line ${m.win === t1Name && t1Name !== 'TBD' ? 'win' : ''}">
+                        <span class="truncate pr-2">${t1Name}</span>
+                        <span class="score-box">${s1}</span>
+                    </div>
+                    <div class="team-line ${m.win === t2Name && t2Name !== 'TBD' ? 'win' : ''}">
+                        <span class="truncate pr-2">${t2Name}</span>
+                        <span class="score-box">${s2}</span>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
