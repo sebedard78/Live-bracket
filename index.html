@@ -3,134 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LP Live Bracket Viewer - ULTRA SHARP</title>
+    <title>Bracket Viewer - Split Screen Optimized</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         
         body { 
             font-family: 'Inter', sans-serif; 
-            background-color: #010409; 
+            background-color: #000000; 
             color: white; 
             margin: 0; 
-            overflow: hidden;
-            /* Force the browser to prioritize sharp text over smooth animations */
-            text-rendering: optimizeSpeed;
-            -webkit-font-smoothing: none; 
-            image-rendering: pixelated;
-        }
-        
-        .bracket-outer { 
-            width: 100vw; 
-            height: calc(100vh - 90px); 
-            overflow: auto; 
-            background: #010409; 
-            position: relative;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* THE FIX: We use zoom instead of transform scale */
-        #zoomLayer { 
-            zoom: 1; 
-            display: inline-flex; 
-            transform-origin: 0 0;
+        /* HEADER AREA */
+        header {
+            height: 60px;
+            background: #111;
+            border-bottom: 2px solid #0ea5e9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        .bracket-scroll { 
-            display: flex; 
-            gap: 60px; 
-            padding: 60px; 
-            align-items: flex-start; 
+        /* THE FIX: Vertical Stacking for Split Screens */
+        .bracket-container {
+            display: flex;
+            flex-direction: column; /* Stack Winners on top of Losers */
+            gap: 50px;
+            padding: 30px;
+            width: 100%;
         }
 
-        .round-col { display: flex; flex-direction: column; gap: 40px; min-width: 320px; }
-        
-        .round-title { 
-            font-size: 18px; /* Bigger base font */
-            font-weight: 900; 
-            color: #8b949e; 
-            text-transform: uppercase; 
-            text-align: center; 
-            border-bottom: 4px solid #30363d; /* Thicker lines for TV */
-            margin-bottom: 20px; 
-            padding-bottom: 10px; 
-            letter-spacing: 3px;
-        }
-        
-        .match-card { 
-            background: #0d1117; 
-            border: 3px solid #30363d; /* Thicker border */
-            border-radius: 20px; 
-            overflow: hidden; 
-            width: 300px; 
-            box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+        .bracket-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
 
-        .team-line { 
-            display: flex; 
-            justify-content: space-between; 
-            padding: 20px; 
-            font-size: 20px; /* Larger base size */
-            font-weight: 900; 
-            border-bottom: 3px solid #010409; 
-            color: #c9d1d9; 
-        }
-
-        /* High contrast for winners */
-        .team-line.win { 
-            background: #0ea5e9; 
-            color: #000000; 
-        }
-        .team-line.win .score-box {
-            background: #000000;
-            color: #0ea5e9;
-        }
-
-        .score-box { 
-            background: #161b22; 
-            color: #fff; 
-            padding: 6px 15px; 
-            border-radius: 10px; 
-            min-width: 55px; 
-            text-align: center;
+        .section-label {
+            font-size: 24px;
             font-weight: 900;
-            font-size: 22px;
+            text-transform: uppercase;
+            color: #0ea5e9;
+            border-left: 8px solid #0ea5e9;
+            padding-left: 15px;
+            margin-bottom: 10px;
+            background: rgba(14, 165, 233, 0.1);
         }
 
-        /* Thicker Scrollbars */
-        .bracket-outer::-webkit-scrollbar { width: 16px; height: 16px; }
-        .bracket-outer::-webkit-scrollbar-track { background: #010409; }
-        .bracket-outer::-webkit-scrollbar-thumb { background: #30363d; border-radius: 10px; border: 4px solid #010409; }
+        /* Horizontal rounds within the stack */
+        .rounds-row {
+            display: flex;
+            gap: 30px;
+            overflow-x: auto;
+            padding-bottom: 20px;
+            align-items: flex-start;
+        }
 
-        .pulse-live { animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+        .round-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-width: 280px; /* Wider cards for readability */
+        }
+
+        .round-name {
+            font-size: 14px;
+            font-weight: 900;
+            color: #64748b;
+            text-transform: uppercase;
+            text-align: center;
+            padding: 5px;
+            border-bottom: 2px solid #334155;
+            margin-bottom: 10px;
+        }
+
+        /* MATCH CARDS - High Contrast for distance viewing */
+        .match-card {
+            background: #111827;
+            border: 3px solid #334155;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        .team-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            font-size: 18px; /* Big font for the TV */
+            font-weight: 800;
+            border-bottom: 2px solid #000;
+        }
+
+        .team-row.winner {
+            background: #0ea5e9;
+            color: #000;
+        }
+
+        .score-box {
+            background: #000;
+            color: #fff;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 20px;
+            min-width: 45px;
+            text-align: center;
+        }
+
+        .team-row.winner .score-box {
+            background: #fff;
+            color: #000;
+        }
+
+        /* Scrollbar for Rounds */
+        .rounds-row::-webkit-scrollbar { height: 10px; }
+        .rounds-row::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+
+        .pulse-dot {
+            width: 10px; height: 10px; background: #22c55e; border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
     </style>
 </head>
 <body>
 
-    <header class="h-[90px] bg-black border-b-4 border-zinc-800 px-10 flex justify-between items-center relative z-50">
-        <div>
-            <h1 class="text-3xl font-black italic uppercase text-sky-400 leading-none tracking-tighter">Tournament Bracket</h1>
-            <div class="flex items-center gap-3 mt-2">
-                <span class="w-3 h-3 bg-green-500 rounded-full pulse-live"></span>
-                <p id="matchCount" class="text-[14px] text-zinc-400 font-black uppercase tracking-widest">Live Feed Connected</p>
-            </div>
+    <header>
+        <div class="flex items-center gap-3">
+            <h1 class="text-xl font-black italic uppercase tracking-tighter">LP Bracket</h1>
+            <span class="bg-zinc-800 text-zinc-400 text-[10px] px-2 py-1 font-bold rounded">LIVE FEED</span>
         </div>
-
-        <div class="flex items-center gap-8">
-            <div class="flex bg-zinc-900 rounded-2xl p-2 border-2 border-zinc-700">
-                <button onclick="changeZoom(0.2)" class="px-8 py-2 hover:bg-zinc-800 font-black text-white text-2xl">+</button>
-                <button onclick="changeZoom(-0.2)" class="px-8 py-2 hover:bg-zinc-800 font-black text-white text-2xl">-</button>
-                <button onclick="changeZoom('reset')" class="px-6 py-2 text-[14px] uppercase font-black text-zinc-500 border-l-2 border-zinc-700">Reset</button>
-            </div>
+        <div class="flex items-center gap-2">
+            <div class="pulse-dot"></div>
+            <span class="text-[11px] font-black uppercase text-zinc-500">Cloud Sync Active</span>
         </div>
     </header>
 
-    <main class="bracket-outer">
-        <div id="zoomLayer">
-            <div class="bracket-scroll" id="bracketContent">
-                <div class="py-40 px-20 text-zinc-600 font-black text-3xl uppercase tracking-tighter">Loading HD Data...</div>
+    <main class="bracket-container" id="zoomLayer">
+        
+        <!-- WINNERS SECTION -->
+        <div class="bracket-section">
+            <h2 class="section-label">Winners Bracket</h2>
+            <div class="rounds-row" id="winnersRow">
+                <!-- Javascript will inject here -->
             </div>
         </div>
+
+        <!-- LOSERS SECTION -->
+        <div class="bracket-section">
+            <h2 class="section-label">Losers Bracket</h2>
+            <div class="rounds-row" id="losersRow">
+                <!-- Javascript will inject here -->
+            </div>
+        </div>
+
     </main>
 
     <script type="module">
@@ -150,64 +185,54 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        let currentZoom = 1.0;
-        let tData = null;
-
-        // Sharp Zooming Logic
-        window.changeZoom = (delta) => {
-            const layer = document.getElementById('zoomLayer');
-            if (delta === 'reset') currentZoom = 1.0;
-            else currentZoom = Math.max(0.4, Math.min(4.0, currentZoom + delta));
-            
-            // This property forces the browser to re-render the font glyphs 
-            // at the actual physical screen pixels.
-            layer.style.zoom = currentZoom;
-        };
-
         onSnapshot(doc(db, "tournament_final_v1", "data"), (snap) => {
-            if (snap.exists()) {
-                tData = snap.data();
-                renderBracket();
-            }
+            if (snap.exists()) render(snap.data());
         });
 
-        function renderBracket() {
-            if (!tData || !tData.bracket) return;
-            const b = tData.bracket;
-            const container = document.getElementById('bracketContent');
-            const rosterSize = tData.roster ? tData.roster.length : 0;
+        function render(data) {
+            const b = data.bracket;
+            const rosterSize = data.roster ? data.roster.length : 0;
             const size = Math.pow(2, Math.ceil(Math.log2(rosterSize || 2)));
             const wRounds = Math.log2(size);
 
-            let html = "";
+            const winnersContainer = document.getElementById('winnersRow');
+            const losersContainer = document.getElementById('losersRow');
+
+            // Build Winners
+            let wHtml = "";
             for (let r = 1; r <= wRounds; r++) {
-                html += `<div class="round-col"><div class="round-title">Winners R${r}</div>`;
-                html += b.winners.filter(x => x.id.startsWith(`W${r}-`)).map(m => renderCard(m)).join('');
-                html += `</div>`;
+                wHtml += `<div class="round-column"><div class="round-name">Round ${r}</div>`;
+                wHtml += b.winners.filter(x => x.id.startsWith(`W${r}-`)).map(m => createCard(m)).join('');
+                wHtml += `</div>`;
             }
-            html += `<div class="round-col"><div class="round-title">Finals</div>`;
-            html += b.winners.filter(x => x.id.startsWith('GF')).map(m => renderCard(m)).join('');
-            html += `</div>`;
+            // Add Finals to winners row
+            wHtml += `<div class="round-column"><div class="round-name text-sky-400">Championship</div>`;
+            wHtml += b.winners.filter(x => x.id.startsWith('GF')).map(m => createCard(m)).join('');
+            wHtml += `</div>`;
+            winnersContainer.innerHTML = wHtml;
+
+            // Build Losers
+            let lHtml = "";
             const maxLR = (wRounds - 1) * 2;
             for (let r = 1; r <= maxLR; r++) {
-                html += `<div class="round-col"><div class="round-title">Losers R${r}</div>`;
-                html += b.losers.filter(x => x.id.startsWith(`L${r}-`)).map(m => renderCard(m)).join('');
-                html += `</div>`;
+                lHtml += `<div class="round-column"><div class="round-name">Losers R${r}</div>`;
+                lHtml += b.losers.filter(x => x.id.startsWith(`L${r}-`)).map(m => createCard(m)).join('');
+                lHtml += `</div>`;
             }
-            container.innerHTML = html;
+            losersContainer.innerHTML = lHtml;
         }
 
-        function renderCard(m) {
+        function createCard(m) {
             const t1Name = m.t1?.name || 'TBD';
             const t2Name = m.t2?.name || 'TBD';
             return `
                 <div class="match-card">
-                    <div class="team-line ${m.win === t1Name && t1Name !== 'TBD' ? 'win' : ''}">
-                        <span class="truncate pr-4">${t1Name}</span>
+                    <div class="team-row ${m.win === t1Name && t1Name !== 'TBD' ? 'winner' : ''}">
+                        <span class="truncate">${t1Name}</span>
                         <span class="score-box">${m.s1 || 0}</span>
                     </div>
-                    <div class="team-line ${m.win === t2Name && t2Name !== 'TBD' ? 'win' : ''}">
-                        <span class="truncate pr-4">${t2Name}</span>
+                    <div class="team-row ${m.win === t2Name && t2Name !== 'TBD' ? 'winner' : ''}">
+                        <span class="truncate">${t2Name}</span>
                         <span class="score-box">${m.s2 || 0}</span>
                     </div>
                 </div>
